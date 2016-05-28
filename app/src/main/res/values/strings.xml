@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TeAvisaBus</string>
+    <string name="titulo_app">Test Bus</string>
+    <string name="textoLinea">Línea: </string>
+    <string name="textoParada">Parada: </string>
+    <string name="textoDestino">Destino: </string>
+    <string name="textoHora">Hora: </string>
+    <string name="textoBotonProgramarAlarma">Programar Alarma</string>
+    <string name="editParada">Número de Parada</string>
+    <string name="btnBuscar">Buscar</string>
+</resources>
