@@ -1,5 +1,8 @@
 package com.chache.teavisabus2;
 
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -7,14 +10,18 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
@@ -35,40 +42,48 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     private static final String TAG_STUDENT_PHONE_MOBILE = "mobile";
     private static final String TAG_STUDENT_PHONE_HOME = "home";
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        String readFeed = readFeed();
+        ArrayList<JsonBean> listBean = new ArrayList<>();
+        ArrayList<String> lineas = new ArrayList<>();
 
-        ArrayList<JsonBean> listBean = new ArrayList<JsonBean>();
-        ArrayList<String> lineas = new ArrayList<String>();
+        try {
 
-        try{
+            String readFeed = readFeed();
+            ConnectivityManager connMgr = (ConnectivityManager)
+                    getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+            if (networkInfo == null && !networkInfo.isConnected()) {
+                Toast avisoConexion = Toast.makeText(getApplicationContext(),
+                        "No hay conexión a Internet", Toast.LENGTH_SHORT);
+                avisoConexion.show();
+            } else {
 
-            JSONObject json = new JSONObject(readFeed);
-            JSONArray jsonArray = new JSONArray(json.optString("Line"));
-            Log.i(MainActivity.class.getName(),
-                    "Number of entries " + jsonArray.length());
+                JSONObject json = new JSONObject(readFeed);
+                JSONArray jsonArray = new JSONArray(json.optString("Line"));
+                Log.i(MainActivity.class.getName(),
+                        "Number of entries " + jsonArray.length());
 
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject jsonObject = jsonArray.getJSONObject(i);
 
-                JsonBean bean = new JsonBean();
-                bean.setName(jsonObject.optString("Name"));
-                listBean.add(bean);
-                lineas.add(jsonObject.optString("Linea"));
+                    JsonBean bean = new JsonBean();
+                    bean.setName(jsonObject.optString("Name"));
+                    listBean.add(bean);
+                    lineas.add(jsonObject.optString("Linea"));
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch(Exception e){
+                e.printStackTrace();
         }
 
         this.cmbLineas = (Spinner) findViewById(R.id.spinnerLinea);
         this.cmbDestino = (Spinner) findViewById(R.id.spinnerDestino);
 
-        cmbLineas.setAdapter(new ArrayAdapter<String>(this, android.R.layout.simple_spinner_dropdown_item, lineas));
+        cmbLineas.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, lineas));
 
 //        loadSpinnerLinea();
     }
@@ -205,37 +220,29 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 //        }
 //    }
 
-    public String readFeed() {
-        StringBuilder builder = new StringBuilder();
-        HttpClient client = new DefaultHttpClient();
+    public String readFeed() throws IOException {
 
-        // domain intentionally obfuscated for security reasons
-//        HttpGet httpGet = new HttpGet("http://www.domain.com/schools.php");
-        HttpGet httpGet = new HttpGet(url);
-        try
-        {
-            HttpResponse response = client.execute(httpGet);
-            StatusLine statusLine = response.getStatusLine();
-            int statusCode = statusLine.getStatusCode();
-            if (statusCode == 200) {
-                HttpEntity entity = response.getEntity();
-                InputStream content = entity.getContent();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(content));
-                String
-                        line;
-                while ((line = reader.readLine()) != null) {
-                    builder.append(line);
-                }
-            } else {
-                Log.e(MainActivity.class.toString(), "Failed to download file");
+        URL webService = new URL (url);
+        HttpURLConnection urlConnection = (HttpURLConnection) webService.openConnection();
+        String line;
+        String response = "";
+
+        try {
+            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
+
+            BufferedReader br = new BufferedReader (new InputStreamReader(in));
+
+            while ((line = br.readLine()) != null) {
+                response += line;
             }
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
+
         } catch (IOException e)
         {
             e.printStackTrace();
+        }finally {
+            urlConnection.disconnect();
         }
-        return builder.toString();
+        return response;
     }
 
     @Override
