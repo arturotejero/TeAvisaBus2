@@ -56,11 +56,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
             ConnectivityManager connMgr = (ConnectivityManager)
                     getSystemService(Context.CONNECTIVITY_SERVICE);
             NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-            if (networkInfo == null && !networkInfo.isConnected()) {
-                Toast avisoConexion = Toast.makeText(getApplicationContext(),
-                        "No hay conexión a Internet", Toast.LENGTH_SHORT);
-                avisoConexion.show();
-            } else {
+            if (networkInfo != null && networkInfo.isConnected()) {
 
                 JSONObject json = new JSONObject(readFeed);
                 JSONArray jsonArray = new JSONArray(json.optString("Line"));
@@ -73,8 +69,13 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
                     JsonBean bean = new JsonBean();
                     bean.setName(jsonObject.optString("Name"));
                     listBean.add(bean);
-                    lineas.add(jsonObject.optString("Linea"));
+                    lineas.add(jsonObject.optString("Line"));
                 }
+            }else {
+
+                Toast avisoConexion = Toast.makeText(getApplicationContext(),
+                        "No hay conexión a Internet", Toast.LENGTH_SHORT);
+                avisoConexion.show();
             }
         } catch(Exception e){
                 e.printStackTrace();
