@@ -1,90 +1,19 @@
 package com.chache.teavisabus2;
 
-import android.content.Context;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
-import android.widget.Toast;
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener{
-
-    Spinner cmbLineas;
-    Spinner cmbDestino;
-
-    // URL to get contacts JSON
-    private static String url = "http://wsteavisabus-teavisabus.rhcloud.com/WSTeAvisaBus/crunchify/emtservice/1835";
-    // JSON Node names
-    private static final String TAG_STUDENT_INFO = "studentsinfo";
-    private static final String TAG_ID = "id";
-    private static final String TAG_STUDENT_NAME = "sname";
-    private static final String TAG_EMAIL = "semail";
-    private static final String TAG_ADDRESS = "address";
-    private static final String TAG_STUDENT_GENDER = "gender";
-    private static final String TAG_STUDENT_PHONE = "sphone";
-    private static final String TAG_STUDENT_PHONE_MOBILE = "mobile";
-    private static final String TAG_STUDENT_PHONE_HOME = "home";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        ArrayList<JsonBean> listBean = new ArrayList<>();
-        ArrayList<String> lineas = new ArrayList<>();
-
-        try {
-
-            String readFeed = readFeed();
-            ConnectivityManager connMgr = (ConnectivityManager)
-                    getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-            if (networkInfo != null && networkInfo.isConnected()) {
-
-                JSONObject json = new JSONObject(readFeed);
-                JSONArray jsonArray = new JSONArray(json.optString("Line"));
-                Log.i(MainActivity.class.getName(),
-                        "Number of entries " + jsonArray.length());
-
-                for (int i = 0; i < jsonArray.length(); i++) {
-                    JSONObject jsonObject = jsonArray.getJSONObject(i);
-
-                    JsonBean bean = new JsonBean();
-                    bean.setName(jsonObject.optString("Name"));
-                    listBean.add(bean);
-                    lineas.add(jsonObject.optString("Line"));
-                }
-            }else {
-
-                Toast avisoConexion = Toast.makeText(getApplicationContext(),
-                        "No hay conexión a Internet", Toast.LENGTH_SHORT);
-                avisoConexion.show();
-            }
-        } catch(Exception e){
-                e.printStackTrace();
-        }
-
-        this.cmbLineas = (Spinner) findViewById(R.id.spinnerLinea);
-        this.cmbDestino = (Spinner) findViewById(R.id.spinnerDestino);
-
-        cmbLineas.setAdapter(new ArrayAdapter<>(this, android.R.layout.simple_spinner_dropdown_item, lineas));
+        // Calling async task to get json
+        new LlamadaWebService().execute();
 
 //        loadSpinnerLinea();
     }
@@ -220,31 +149,6 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
 //
 //        }
 //    }
-
-    public String readFeed() throws IOException {
-
-        URL webService = new URL (url);
-        HttpURLConnection urlConnection = (HttpURLConnection) webService.openConnection();
-        String line;
-        String response = "";
-
-        try {
-            InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-            BufferedReader br = new BufferedReader (new InputStreamReader(in));
-
-            while ((line = br.readLine()) != null) {
-                response += line;
-            }
-
-        } catch (IOException e)
-        {
-            e.printStackTrace();
-        }finally {
-            urlConnection.disconnect();
-        }
-        return response;
-    }
 
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
